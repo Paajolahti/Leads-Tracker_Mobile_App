@@ -1,23 +1,23 @@
-let myLeads = []
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getDatabase,
+        ref,
+        push,
+        onValue,
+        remove } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+
+const firebaseConfig = {
+    databaseURL: "https://leads-tracker-app-43a26-default-rtdb.europe-west1.firebasedatabase.app/"
+}
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const referenceinDB = ref(database, "leads")
+
 const inputEl = document.getElementById("input-el")
 const inputBtn = document.getElementById("input-btn")
 const ulEl = document.getElementById("ul-el")
 const deleteBtn = document.getElementById("delete-btn")
 const leadsFromLocalStorage = JSON.parse( localStorage.getItem("myLeads") )
-const tabBtn = document.getElementById("tab-btn")
-
-if (leadsFromLocalStorage) {
-    myLeads = leadsFromLocalStorage
-    render(myLeads)
-}
-
-tabBtn.addEventListener("click", function(){    
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-        myLeads.push(tabs[0].url)
-        localStorage.setItem("myLeads", JSON.stringify(myLeads) )
-        render(myLeads)
-    })
-})
 
 function render(leads) {
     let listItems = ""
@@ -33,15 +33,21 @@ function render(leads) {
     ulEl.innerHTML = listItems
 }
 
+onValue(referenceinDB, function(snapshot) {
+    const snapshotDoesExit = snapshot.exists()
+    if (snapshotDoesExit) {
+        const snapshotValues = snapshot.val()
+        const leads = Object.values(snapshotValues)
+        render(leads)
+    }
+})
+
 deleteBtn.addEventListener("dblclick", function() {
-    localStorage.clear()
-    myLeads = []
-    render(myLeads)
+    remove(referenceinDB)
+    ulEl.innerHTML = ""
 })
 
 inputBtn.addEventListener("click", function() {
-    myLeads.push(inputEl.value)
+    push(referenceinDB, inputEl.value)
     inputEl.value = ""
-    localStorage.setItem("myLeads", JSON.stringify(myLeads) )
-    render(myLeads)
 })
